@@ -1,7 +1,7 @@
 #pragma once
 #include <asio.hpp>
 
-#include "tcp_connection.h"
+#include "tcpconnection.h"
 
 class TcpServer
 {
@@ -11,7 +11,7 @@ public:
 private:
     void startAccept();
 
-    void handleAccept(tcp_connection::pointer newConnection,
+    void handleAccept(TcpConnection::pointer newConnection,
                        const asio::error_code& error);
 
     asio::io_context& ioContext_;
