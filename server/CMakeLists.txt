@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(GaijinTestServer main.cpp
-  config.h config.cpp)
+  config.h config.cpp
+  values.h values.cpp
+  tcpserver.h tcpserver.cpp
+  tcp_connection.h tcp_connection.cpp)
 
 target_link_libraries(GaijinTestServer PRIVATE ws2_32 wsock32)
 
