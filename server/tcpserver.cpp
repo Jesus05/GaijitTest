@@ -4,13 +4,11 @@ using asio::ip::tcp;
 
 TcpServer::TcpServer(asio::io_context &io_context)
     : ioContext_(io_context),
-    acceptor_(io_context, tcp::endpoint(tcp::v4(), 13))
-{
+    acceptor_(io_context, tcp::endpoint(tcp::v4(), 13)) {
     startAccept();
 }
 
-void TcpServer::startAccept()
-{
+void TcpServer::startAccept() {
     TcpConnection::pointer newConnection =
         TcpConnection::create(ioContext_);
 
@@ -19,11 +17,11 @@ void TcpServer::startAccept()
                                      asio::placeholders::error));
 }
 
-void TcpServer::handleAccept(TcpConnection::pointer newConnection, const asio::error_code &error)
-{
-    if (!error)
-    {
-        newConnection->start();
+void TcpServer::handleAccept(TcpConnection::pointer newConnection, const asio::error_code &error) {
+    if (!error) {
+        std::thread([newConnection](){
+            newConnection->start();
+        }).detach();
     }
 
     startAccept();
