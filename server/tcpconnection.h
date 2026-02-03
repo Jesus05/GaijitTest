@@ -32,6 +32,8 @@ private:
         std::string value;
     };
 
+    bool readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error);
+
     bool accumulateBuffer();
     std::optional<Command> parseCommand(std::string_view line);
 

@@ -37,6 +37,40 @@ TcpConnection::TcpConnection(asio::io_context &io_context, Values::pointer value
     stats_(stats) {
 }
 
+bool TcpConnection::readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error) {
+    size_t totalRead = 0;
+    result.clear();
+
+    while (true) {
+        size_t bytesRead = socket_.read_some(buffer + totalRead, error);
+
+        if (error || bytesRead == 0) {
+            return false;
+        }
+
+        totalRead += bytesRead;
+
+        const char* data = static_cast<const char*>(buffer.data());
+        for (size_t i = totalRead - bytesRead; i < totalRead; ++i) {
+            if (data[i] == delimiter) {
+                result.assign(data, i);
+
+                size_t remaining = totalRead - i - 1;
+                if (remaining > 0) {
+                    std::memmove(buffer.data(), data + i + 1, remaining);
+                }
+
+                return true;
+            }
+        }
+
+        if (totalRead >= buffer.size()) {
+            error = asio::error::message_size;
+            return false;
+        }
+    }
+}
+
 bool TcpConnection::accumulateBuffer() {
     std::array<char, 128> readMessage;
     asio::error_code error;
@@ -48,6 +82,7 @@ bool TcpConnection::accumulateBuffer() {
         std::cout << "distance:" << writed << std::endl;
         buffer_.write(&readMessage[0], writed);
         *it = '\0';
+
         std::string line;
         std::cout << (bool)std::getline(buffer_, line) << std::endl;
         std::cout << "Line:" << line << std::endl;
