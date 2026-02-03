@@ -9,7 +9,9 @@ add_executable(GaijinTestServer main.cpp
   config.h config.cpp
   values.h
   tcpserver.h tcpserver.cpp
-  tcpconnection.h tcpconnection.cpp)
+  tcpconnection.h tcpconnection.cpp
+  statisticsmanager.h statisticsmanager.cpp
+  stats.h)
 
 target_link_libraries(GaijinTestServer PRIVATE ws2_32 wsock32)
 

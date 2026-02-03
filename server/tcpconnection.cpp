@@ -15,34 +15,29 @@ std::string_view trim(std::string_view str) {
     return str.substr(start, end - start + 1);
 }
 
-TcpConnection::pointer TcpConnection::create(asio::io_context &io_context, Values::pointer values)
-{
-    return pointer(new TcpConnection(io_context, values));
+TcpConnection::pointer TcpConnection::create(asio::io_context &io_context, Values::pointer values, Stats::pointer stats) {
+    return pointer(new TcpConnection(io_context, values, stats));
 }
 
-tcp::socket &TcpConnection::socket()
-{
+tcp::socket &TcpConnection::socket() {
     return socket_;
 }
 
-void TcpConnection::start()
-{
-    while(1)
-    {
+void TcpConnection::start() {
+    while(1) {
         if (!accumulateBuffer()) break;
     }
 
     std::cout << "Exit" << std::endl;
 }
 
-TcpConnection::TcpConnection(asio::io_context &io_context, Values::pointer values)
+TcpConnection::TcpConnection(asio::io_context &io_context, Values::pointer values, Stats::pointer stats)
     : socket_(io_context),
-    values_(values)
-{
+    values_(values),
+    stats_(stats) {
 }
 
-bool TcpConnection::accumulateBuffer()
-{
+bool TcpConnection::accumulateBuffer() {
     std::array<char, 128> readMessage;
     asio::error_code error;
     size_t len = socket_.read_some(asio::buffer(readMessage), error);
@@ -149,14 +144,12 @@ std::optional<TcpConnection::Command> TcpConnection::parseCommand(std::string_vi
     return std::nullopt;
 }
 
-void TcpConnection::executeGet(const std::string &key)
-{
+void TcpConnection::executeGet(const std::string &key) {
     const auto value = values_->get(key);
     //TODO
 }
 
-void TcpConnection::executeSet(const std::string &key, const std::string &value)
-{
+void TcpConnection::executeSet(const std::string &key, const std::string &value) {
     values_->set(key, value);
     //TODO
 }

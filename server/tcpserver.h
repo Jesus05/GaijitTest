@@ -3,11 +3,12 @@
 
 #include "tcpconnection.h"
 #include "values.h"
+#include "stats.h"
 
 class TcpServer
 {
 public:
-    TcpServer(asio::io_context& io_context, Values::pointer values);
+    TcpServer(asio::io_context& io_context, Values::pointer values, Stats::pointer stats);
 
 private:
     void startAccept();
@@ -18,4 +19,5 @@ private:
     asio::io_context& ioContext_;
     asio::ip::tcp::acceptor acceptor_;
     Values::pointer values_;
+    Stats::pointer stats_;
 };

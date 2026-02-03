@@ -8,6 +8,7 @@
 #include <asio.hpp>
 
 #include "values.h"
+#include "stats.h"
 
 class TcpConnection
     : public std::enable_shared_from_this<TcpConnection>
@@ -15,14 +16,14 @@ class TcpConnection
 public:
     typedef std::shared_ptr<TcpConnection> pointer;
 
-    static pointer create(asio::io_context& io_context, Values::pointer values);
+    static pointer create(asio::io_context& io_context, Values::pointer values, Stats::pointer stats);
 
     asio::ip::tcp::socket& socket();
 
     void start();
 
 private:
-    TcpConnection(asio::io_context& io_context, Values::pointer values);
+    TcpConnection(asio::io_context& io_context, Values::pointer values, Stats::pointer stats);
 
     struct Command{
         enum Type { GET, SET };
@@ -40,6 +41,7 @@ private:
     asio::ip::tcp::socket socket_;
     std::stringstream buffer_;
     Values::pointer values_;
+    Stats::pointer stats_;
 };
 
 #endif // TCP_CONNECTION_H
