@@ -28,7 +28,7 @@ void Config::saveLoop() {
     }
 }
 
-bool Config::load(const std::filesystem::__cxx11::path &filename) {
+bool Config::load(const std::filesystem::path &filename) {
     path_ = filename;
     std::lock_guard lock(mutex_);
     config_.clear();

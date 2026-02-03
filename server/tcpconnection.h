@@ -10,9 +10,7 @@
 #include "values.h"
 #include "stats.h"
 
-class TcpConnection
-    : public std::enable_shared_from_this<TcpConnection>
-{
+class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 public:
     typedef std::shared_ptr<TcpConnection> pointer;
 

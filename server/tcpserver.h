@@ -5,8 +5,7 @@
 #include "values.h"
 #include "stats.h"
 
-class TcpServer
-{
+class TcpServer {
 public:
     TcpServer(asio::io_context& io_context, Values::pointer values, Stats::pointer stats);
 

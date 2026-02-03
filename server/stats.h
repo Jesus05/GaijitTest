@@ -2,8 +2,7 @@
 
 #include <memory>
 
-class Stats
-{
+class Stats {
 public:
     struct KeyStatistics {
         uint64_t reads;

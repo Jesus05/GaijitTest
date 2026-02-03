@@ -9,8 +9,7 @@ StatisticsManager::StatisticsManager()
     : totalCommands_(0)
     , recentCommands_(0)
     , running_(true)
-    , printerThread_(&StatisticsManager::printerLoop, this)
-{
+    , printerThread_(&StatisticsManager::printerLoop, this) {
 }
 
 StatisticsManager::~StatisticsManager() {
@@ -89,25 +88,6 @@ void StatisticsManager::printerLoop() {
     }
 }
 
-// void StatisticsManager::enableDetailedStats(bool enable) {
-//     detailedStatsEnabled_ = enable;
-// }
-
-// uint64_t StatisticsManager::getTotalCommands() const {
-//     return totalCommands_.load();
-// }
-
-// uint64_t StatisticsManager::getRecentCommands() const {
-//     return recentCommands_.load();
-// }
-
-// void StatisticsManager::reset() {
-//     totalCommands_.store(0);
-//     recentCommands_.store(0);
-//     std::lock_guard<std::mutex> lock(keyStatsMutex_);
-//     keyStatsMap_.clear();
-// }
-
 void StatisticsManager::debugDump() const {
     std::cout << "\n=== DEBUG STATISTICS DUMP ===" << std::endl;
     std::cout << "Total commands: " << totalCommands_.load() << std::endl;
@@ -120,21 +100,3 @@ void StatisticsManager::debugDump() const {
     }
     std::cout << "============================\n" << std::endl;
 }
-
-// std::unordered_map<std::string, StatisticsManager::KeyStatistics>
-// StatisticsManager::getAllKeyStats() const {
-//     std::unordered_map<std::string, KeyStatistics> result;
-//     if (detailedStatsEnabled_) {
-//         std::lock_guard<std::mutex> lock(keyStatsMutex_);
-//         for (const auto& [key, stats] : keyStatsMap_) {
-//             result[key] = {stats.reads.load(), stats.writes.load()};
-//         }
-//     }
-//     return result;
-// }
-
-// size_t StatisticsManager::getUniqueKeysCount() const {
-//     if (!detailedStatsEnabled_) return 0;
-//     std::lock_guard<std::mutex> lock(keyStatsMutex_);
-//     return keyStatsMap_.size();
-// }

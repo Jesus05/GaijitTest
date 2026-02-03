@@ -5,8 +5,7 @@
 #include <optional>
 #include <memory>
 
-class Values
-{
+class Values {
 public:
     typedef std::shared_ptr<Values> pointer;
     virtual std::optional<std::string> get(const std::string_view& key) const = 0;
