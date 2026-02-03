@@ -5,11 +5,9 @@
 
 using asio::ip::tcp;
 
-
-
-TcpConnection::pointer TcpConnection::create(asio::io_context &io_context)
+TcpConnection::pointer TcpConnection::create(asio::io_context &io_context, Values::pointer values)
 {
-    return pointer(new TcpConnection(io_context));
+    return pointer(new TcpConnection(io_context, values));
 }
 
 tcp::socket &TcpConnection::socket()
@@ -19,97 +17,69 @@ tcp::socket &TcpConnection::socket()
 
 void TcpConnection::start()
 {
-    message_ = make_daytime_string();
-
-    // std::stringstream ss;
-
     while(1)
     {
-        asio::error_code error;
-        size_t len = socket_.read_some(asio::buffer(readMessage_), error);
-        if (error || len == 0) break;
-        if (auto it = std::find(readMessage_.begin(), readMessage_.end(), '\n'); it != readMessage_.end()) {
-            it++;/*\n*/
-            const size_t writed = std::distance(readMessage_.begin(), it);
-            std::cout << "distance:" << writed << std::endl;
-            buffer_.write(&readMessage_[0], writed);
-            *it = '\0';
-            std::string line;
-            std::cout << (bool)std::getline(buffer_, line) << std::endl;
-            std::cout << "Line:" << line << std::endl;
-
-            std::cout << "distance2:" << std::distance(it, readMessage_.end()) << std::endl;
-            std::cout << "it != readMessage_.end():" << (it != readMessage_.end()) << std::endl;
-
-            buffer_.write(&readMessage_[0], len-writed);
-        }
-        else {
-            buffer_.write(&readMessage_[0], len);
-        }
-        std::cout << "read len:" << len << " e:" << error << std::endl;
-        std::cout << &readMessage_[0] << std::endl;
-//        std::string line;
-//        std::cout << (bool)std::getline(ss, line) << std::endl;
-//        std::cout << line << std::endl;
+        if (!accumulateBuffer()) break;
     }
 
     std::cout << "Exit" << std::endl;
-
-    // asio::async_write(socket_, asio::buffer(message_),
-    //                   std::bind(&TcpConnection::handle_write, shared_from_this(),
-    //                             asio::placeholders::error,
-    //                             asio::placeholders::bytes_transferred));
-
-    //        asio::async_read_until(socket_, data, '\n', handler);
-
-    // asio::async_read_until(socket_, asio::buffer(readMessage_), "\n",
-    //                        std::bind(&tcp_connection::handle_read, shared_from_this(),
-    //                                                                             asio::placeholders::error,
-    //                                                                             asio::placeholders::bytes_transferred) );
-
-    // asio::async_read(socket_, asio::buffer(readMessage_),
-    //                         std::bind(&tcp_connection::handle_read, shared_from_this(),
-    //                                    asio::placeholders::error,
-    //                                    asio::placeholders::bytes_transferred));
-
 }
 
-TcpConnection::TcpConnection(asio::io_context &io_context)
-    : socket_(io_context)
+TcpConnection::TcpConnection(asio::io_context &io_context, Values::pointer values)
+    : socket_(io_context),
+    values_(values)
 {
 }
 
-void TcpConnection::handle_write(const asio::error_code &error, size_t bytes_transferred)
+bool TcpConnection::accumulateBuffer()
 {
-    std::cout << "writed:" << bytes_transferred << " e:" << error << std::endl;
-    start();
-}
+    std::array<char, 128> readMessage;
+    asio::error_code error;
+    size_t len = socket_.read_some(asio::buffer(readMessage), error);
+    if (error || len == 0) return false;
+    if (auto it = std::find(readMessage.begin(), readMessage.end(), '\n'); it != readMessage.end()) {
+        it++;/*\n*/
+        const size_t writed = std::distance(readMessage.begin(), it);
+        std::cout << "distance:" << writed << std::endl;
+        buffer_.write(&readMessage[0], writed);
+        *it = '\0';
+        std::string line;
+        std::cout << (bool)std::getline(buffer_, line) << std::endl;
+        std::cout << "Line:" << line << std::endl;
 
-void TcpConnection::handle_read(const asio::error_code &error, size_t bytes_transferred)
-{
-    std::cout << "readed:" << bytes_transferred << " e:" << error << std::endl;
-    readMessage_[bytes_transferred] = '\0';
-    std::cout << &readMessage_[0] << std::endl;
+        const auto command = parseCommand(line);
+        if (command) executeCommand(command.value());
 
-    if (bytes_transferred == 0)
-    {
-        asio::async_read(socket_, asio::buffer(readMessage_),
-                         std::bind(&TcpConnection::handle_read, shared_from_this(),
-                                   asio::placeholders::error,
-                                   asio::placeholders::bytes_transferred));
+        std::cout << "distance2:" << std::distance(it, readMessage.end()) << std::endl;
+        std::cout << "it != readMessage_.end():" << (it != readMessage.end()) << std::endl;
+
+        buffer_.write(&readMessage[0], len-writed);
     }
-    else
-    {
-        asio::async_write(socket_, asio::buffer(message_),
-                          std::bind(&TcpConnection::handle_write, shared_from_this(),
-                                    asio::placeholders::error,
-                                    asio::placeholders::bytes_transferred));
+    else {
+        buffer_.write(&readMessage[0], len);
     }
+    std::cout << "read len:" << len << " e:" << error << std::endl;
+    std::cout << &readMessage[0] << std::endl;
+    return true;
 }
 
-std::string make_daytime_string()
-{
-    using namespace std; // For time_t, time and ctime;
-    time_t now = time(0);
-    return ctime(&now);
+std::optional<std::string> TcpConnection::parseCommand(std::string_view line) {
+
+}
+
+void TcpConnection::executeCommand(std::string_view commandString) {
+    const std::string_view command = commandString.substr(0, 4);
+
+    if (command == "$get") {
+        const std::string_view key = commandString.substr(6);
+        const auto value = values_->get(key);
+        //TODO
+    }
+    if (command == "$set") {
+        const size_t eq = commandString.find('=');
+        const std::string_view key = commandString.substr(6, eq-6);
+        const std::string_view value = commandString.substr(eq+1);
+        values_->set(key, value);
+        //TODO
+    }
 }

@@ -105,16 +105,16 @@ bool Config::save()
     return true;
 }
 
-std::optional<std::string> Config::get(const std::string &key) const {
+std::optional<std::string> Config::get(const std::string_view &key) const {
     std::shared_lock lock(mutex_);
-    auto it = config_.find(key);
+    auto it = config_.find(std::string(key));
     if (it != config_.end()) {
         return it->second;
     }
     return std::nullopt;
 }
 
-void Config::set(const std::string &key, const std::string &value)
+void Config::set(const std::string_view &key, const std::string_view &value)
 {
     if (key.empty()) {
         std::cerr << "Key cannot be empty IGNORED" << std::endl;
@@ -133,7 +133,7 @@ void Config::set(const std::string &key, const std::string &value)
     }
 
     std::lock_guard lock(mutex_);
-    config_[key] = value;
+    config_[std::string(key)] = value;
 }
 
 

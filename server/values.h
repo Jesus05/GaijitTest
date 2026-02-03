@@ -3,12 +3,14 @@
 
 #include <string>
 #include <optional>
+#include <memory>
 
 class Values
 {
 public:
-    virtual std::optional<std::string> get(const std::string& key) const = 0;
-    virtual void set(const std::string& key, const std::string& value) = 0;
+    typedef std::shared_ptr<Values> pointer;
+    virtual std::optional<std::string> get(const std::string_view& key) const = 0;
+    virtual void set(const std::string_view& key, const std::string_view& value) = 0;
     virtual ~Values() = default;
 };
 

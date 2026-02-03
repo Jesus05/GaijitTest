@@ -2,15 +2,16 @@
 
 using asio::ip::tcp;
 
-TcpServer::TcpServer(asio::io_context &io_context)
+TcpServer::TcpServer(asio::io_context &io_context, Values::pointer values)
     : ioContext_(io_context),
-    acceptor_(io_context, tcp::endpoint(tcp::v4(), 13)) {
+    acceptor_(io_context, tcp::endpoint(tcp::v4(), 13)),
+    values_(values) {
     startAccept();
 }
 
 void TcpServer::startAccept() {
     TcpConnection::pointer newConnection =
-        TcpConnection::create(ioContext_);
+        TcpConnection::create(ioContext_, values_);
 
     acceptor_.async_accept(newConnection->socket(),
                            std::bind(&TcpServer::handleAccept, this, newConnection,

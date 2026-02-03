@@ -16,8 +16,8 @@ class Config : public Values
 public:
     bool load(const std::filesystem::path& filename);
     bool save();
-    std::optional<std::string> get(const std::string& key) const override;
-    void set(const std::string& key, const std::string& value) override;
+    std::optional<std::string> get(const std::string_view& key) const override;
+    void set(const std::string_view& key, const std::string_view& value) override;
 };
 
 #endif // CONFIG_H
