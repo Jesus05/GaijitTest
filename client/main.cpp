@@ -112,12 +112,9 @@ std::vector<std::string> predefinedValues = {
     "manual"
 };
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-    if (argc != 2)
-    {
+int main(int argc, char* argv[]) {
+  try {
+    if (argc != 2) {
       std::cerr << "Usage: client <host>" << std::endl;
       return 1;
     }
@@ -164,8 +161,7 @@ int main(int argc, char* argv[])
 
     socket.close();
   }
-  catch (std::exception& e)
-  {
+  catch (std::exception& e) {
     std::cerr << e.what() << std::endl;
   }
 
