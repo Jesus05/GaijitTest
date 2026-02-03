@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
       }
 
       len = socket.write_some(asio::buffer(std::string("$get test\n")), error);
+      std::cout << "Send command" << "e:" << error << std::endl;
 
       len = socket.read_some(asio::buffer(buf), error);
 

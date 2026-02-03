@@ -32,7 +32,7 @@ private:
         std::string value;
     };
 
-    bool readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error);
+    bool readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error, size_t &totalRead);
 
     bool accumulateBuffer();
     std::optional<Command> parseCommand(std::string_view line);
@@ -42,7 +42,8 @@ private:
     void sendResponse(const std::string &response);
 
     asio::ip::tcp::socket socket_;
-    std::stringstream buffer_;
+    std::array<char, 4096> buffer_;
+    size_t bufferUse_;
     Values::pointer values_;
     Stats::pointer stats_;
 

@@ -24,32 +24,28 @@ tcp::socket &TcpConnection::socket() {
 }
 
 void TcpConnection::start() {
+    std::cout << "open session:" << (void*)this << std::endl;
+
     while(1) {
         if (!accumulateBuffer()) break;
     }
 
-    std::cout << "Exit" << std::endl;
+    std::cout << "close session:" << (void*)this << std::endl;
 }
 
 TcpConnection::TcpConnection(asio::io_context &io_context, Values::pointer values, Stats::pointer stats)
     : socket_(io_context),
     values_(values),
-    stats_(stats) {
+    stats_(stats),
+    bufferUse_(0){
 }
 
-bool TcpConnection::readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error) {
-    size_t totalRead = 0;
+bool TcpConnection::readUntil(const asio::mutable_buffer& buffer, char delimiter, std::string& result, asio::error_code& error, size_t &totalRead) {
     result.clear();
 
+    size_t bytesRead = totalRead;
+
     while (true) {
-        size_t bytesRead = socket_.read_some(buffer + totalRead, error);
-
-        if (error || bytesRead == 0) {
-            return false;
-        }
-
-        totalRead += bytesRead;
-
         const char* data = static_cast<const char*>(buffer.data());
         for (size_t i = totalRead - bytesRead; i < totalRead; ++i) {
             if (data[i] == delimiter) {
@@ -59,10 +55,19 @@ bool TcpConnection::readUntil(const asio::mutable_buffer& buffer, char delimiter
                 if (remaining > 0) {
                     std::memmove(buffer.data(), data + i + 1, remaining);
                 }
+                totalRead = remaining;
 
                 return true;
             }
         }
+
+        bytesRead = socket_.read_some(buffer + totalRead, error);
+
+        if (error || bytesRead == 0) {
+            return false;
+        }
+
+        totalRead += bytesRead;
 
         if (totalRead >= buffer.size()) {
             error = asio::error::message_size;
@@ -71,41 +76,25 @@ bool TcpConnection::readUntil(const asio::mutable_buffer& buffer, char delimiter
     }
 }
 
-bool TcpConnection::accumulateBuffer() {
-    std::array<char, 128> readMessage;
+bool TcpConnection::accumulateBuffer()
+{
     asio::error_code error;
-    size_t len = socket_.read_some(asio::buffer(readMessage), error);
-    if (error || len == 0) return false;
-    if (auto it = std::find(readMessage.begin(), readMessage.end(), '\n'); it != readMessage.end()) {
-        it++;/*\n*/
-        const size_t writed = std::distance(readMessage.begin(), it);
-        std::cout << "distance:" << writed << std::endl;
-        buffer_.write(&readMessage[0], writed);
-        *it = '\0';
+    std::string line;
 
-        std::string line;
-        std::cout << (bool)std::getline(buffer_, line) << std::endl;
-        std::cout << "Line:" << line << std::endl;
+    if (!readUntil(asio::buffer(buffer_), '\n', line, error, bufferUse_)) {
+        std::cerr << "Read error: " << error.message() << std::endl;
+        return false;
+    }
 
-        const auto command = parseCommand(line);
-        if (command){
-            const auto &cmd = command.value();
-            switch(cmd.command) {
-                case Command::GET: executeGet(cmd.key); break;
-                case Command::SET: executeSet(cmd.key, cmd.value); break;
-            }
+    const auto command = parseCommand(line);
+    if (command){
+        const auto &cmd = command.value();
+        switch(cmd.command) {
+            case Command::GET: executeGet(cmd.key); break;
+            case Command::SET: executeSet(cmd.key, cmd.value); break;
         }
-
-        std::cout << "distance2:" << std::distance(it, readMessage.end()) << std::endl;
-        std::cout << "it != readMessage_.end():" << (it != readMessage.end()) << std::endl;
-
-        buffer_.write(&readMessage[0], len-writed);
     }
-    else {
-        buffer_.write(&readMessage[0], len);
-    }
-    std::cout << "read len:" << len << " e:" << error << std::endl;
-    std::cout << &readMessage[0] << std::endl;
+
     return true;
 }
 

@@ -5,6 +5,29 @@
 
 namespace fs = std::filesystem;
 
+Config::Config()
+    : dirty_(false),
+    running_(true),
+    saveThread_(&Config::saveLoop, this) {
+}
+
+Config::~Config() {
+    running_ = false;
+    if (saveThread_.joinable()) {
+        saveThread_.join();
+    }
+}
+
+void Config::saveLoop() {
+    while (running_) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (dirty_){
+            save();
+            dirty_ = false;
+        }
+    }
+}
+
 bool Config::load(const std::filesystem::__cxx11::path &filename) {
     path_ = filename;
     std::lock_guard lock(mutex_);
@@ -26,10 +49,8 @@ bool Config::load(const std::filesystem::__cxx11::path &filename) {
     }
 
     std::string line;
-    // size_t line_number = 0;
 
     while (std::getline(file, line)) {
-        // line_number++;
 
         if (line.empty() || line[0] == '#') {
             continue;
@@ -70,8 +91,7 @@ bool Config::load(const std::filesystem::__cxx11::path &filename) {
     return true;
 }
 
-bool Config::save()
-{
+bool Config::save() {
     std::shared_lock lock(mutex_);
     fs::path tempPath = path_;
     tempPath += ".tmp";
@@ -102,6 +122,8 @@ bool Config::save()
         return false;
     }
 
+    std::cout << "Succesful saved" << std::endl;
+
     return true;
 }
 
@@ -114,8 +136,7 @@ std::optional<std::string> Config::get(const std::string_view &key) const {
     return std::nullopt;
 }
 
-void Config::set(const std::string_view &key, const std::string_view &value)
-{
+void Config::set(const std::string_view &key, const std::string_view &value) {
     if (key.empty()) {
         std::cerr << "Key cannot be empty IGNORED" << std::endl;
         return;
@@ -134,6 +155,7 @@ void Config::set(const std::string_view &key, const std::string_view &value)
 
     std::lock_guard lock(mutex_);
     config_[std::string(key)] = value;
+    dirty_ = true;
 }
 
 

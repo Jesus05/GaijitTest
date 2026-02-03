@@ -20,28 +20,21 @@ public:
     StatisticsManager();
     ~StatisticsManager();
 
-    void recordCommand(const std::string& key = "", bool isRead = true);
     void recordRead(const std::string& key) override;
     void recordWrite(const std::string& key) override;
 
     KeyStatistics getKeyStats(const std::string& key) const override;
-    void resetRecentCommands();
     void printStatistics() const;
 
-    void enableDetailedStats(bool enable);
-    uint64_t getTotalCommands() const;
-    uint64_t getRecentCommands() const;
-    void reset();
-
     void debugDump() const;
-    std::unordered_map<std::string, KeyStatistics> getAllKeyStats() const;
-    size_t getUniqueKeysCount() const;
 
     StatisticsManager(const StatisticsManager&) = delete;
     StatisticsManager& operator=(const StatisticsManager&) = delete;
 
 private:
+    void resetRecentCommands();
     void printerLoop();
+    void recordCommand(const std::string& key = "", bool isRead = true);
     std::string getCurrentTime() const;
 
     std::atomic<uint64_t> totalCommands_;
@@ -52,5 +45,4 @@ private:
 
     std::atomic<bool> running_;
     std::thread printerThread_;
-    bool detailedStatsEnabled_;
 };

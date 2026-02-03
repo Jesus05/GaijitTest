@@ -9,7 +9,6 @@ StatisticsManager::StatisticsManager()
     : totalCommands_(0)
     , recentCommands_(0)
     , running_(true)
-    , detailedStatsEnabled_(true)
     , printerThread_(&StatisticsManager::printerLoop, this)
 {
 }
@@ -28,7 +27,7 @@ void StatisticsManager::recordCommand(const std::string& key, bool isRead) {
     totalCommands_++;
     recentCommands_++;
 
-    if (!key.empty() && detailedStatsEnabled_) {
+    if (!key.empty()) {
         std::lock_guard<std::mutex> lock(keyStatsMutex_);
         auto& stats = keyStatsMap_[key];
         if (isRead) {
@@ -48,10 +47,6 @@ void StatisticsManager::recordWrite(const std::string& key) {
 }
 
 StatisticsManager::KeyStatistics StatisticsManager::getKeyStats(const std::string& key) const {
-    if (!detailedStatsEnabled_) {
-        return {0, 0};
-    }
-
     std::lock_guard<std::mutex> lock(keyStatsMutex_);
     auto it = keyStatsMap_.find(key);
     if (it != keyStatsMap_.end()) {
@@ -117,14 +112,11 @@ void StatisticsManager::debugDump() const {
     std::cout << "\n=== DEBUG STATISTICS DUMP ===" << std::endl;
     std::cout << "Total commands: " << totalCommands_.load() << std::endl;
     std::cout << "Recent commands: " << recentCommands_.load() << std::endl;
-
-    if (detailedStatsEnabled_) {
-        std::lock_guard<std::mutex> lock(keyStatsMutex_);
-        std::cout << "Key statistics (" << keyStatsMap_.size() << " keys):" << std::endl;
-        for (const auto& [key, stats] : keyStatsMap_) {
-            std::cout << "  " << key << ": reads=" << stats.reads.load()
-            << ", writes=" << stats.writes.load() << std::endl;
-        }
+    std::lock_guard<std::mutex> lock(keyStatsMutex_);
+    std::cout << "Key statistics (" << keyStatsMap_.size() << " keys):" << std::endl;
+    for (const auto& [key, stats] : keyStatsMap_) {
+        std::cout << "  " << key << ": reads=" << stats.reads.load()
+        << ", writes=" << stats.writes.load() << std::endl;
     }
     std::cout << "============================\n" << std::endl;
 }
