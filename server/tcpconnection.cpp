@@ -5,6 +5,16 @@
 
 using asio::ip::tcp;
 
+std::string_view trim(std::string_view str) {
+    auto start = str.find_first_not_of(" \t\r\n");
+    if (start == std::string_view::npos) {
+        return "";
+    }
+
+    auto end = str.find_last_not_of(" \t\r\n");
+    return str.substr(start, end - start + 1);
+}
+
 TcpConnection::pointer TcpConnection::create(asio::io_context &io_context, Values::pointer values)
 {
     return pointer(new TcpConnection(io_context, values));
@@ -48,7 +58,13 @@ bool TcpConnection::accumulateBuffer()
         std::cout << "Line:" << line << std::endl;
 
         const auto command = parseCommand(line);
-        if (command) executeCommand(command.value());
+        if (command){
+            const auto &cmd = command.value();
+            switch(cmd.command) {
+                case Command::GET: executeGet(cmd.key); break;
+                case Command::SET: executeSet(cmd.key, cmd.value); break;
+            }
+        }
 
         std::cout << "distance2:" << std::distance(it, readMessage.end()) << std::endl;
         std::cout << "it != readMessage_.end():" << (it != readMessage.end()) << std::endl;
@@ -63,23 +79,84 @@ bool TcpConnection::accumulateBuffer()
     return true;
 }
 
-std::optional<std::string> TcpConnection::parseCommand(std::string_view line) {
+std::optional<TcpConnection::Command> TcpConnection::parseCommand(std::string_view input) {
+    input = trim(input);
 
+    if (input.empty()) {
+        return std::nullopt;
+    }
+
+    if (input[0] != '$') {
+        return std::nullopt;
+    }
+
+    input.remove_prefix(1);
+    input = trim(input);
+
+    if (input.size() >= 3 &&
+        (input[0] == 'g' || input[0] == 'G') &&
+        (input[1] == 'e' || input[1] == 'E') &&
+        (input[2] == 't' || input[2] == 'T')) {
+
+        input.remove_prefix(3);
+
+        input = trim(input);
+
+        if (input.empty()) {
+            return std::nullopt;
+        }
+
+        std::string key = std::string(input);
+
+        key.erase(std::find_if(key.rbegin(), key.rend(),
+                                  [](unsigned char ch) { return !std::isspace(ch); }).base(),
+                     key.end());
+
+        return Command{Command::GET, key, ""};
+    }
+
+    if (input.size() >= 3 &&
+        (input[0] == 's' || input[0] == 'S') &&
+        (input[1] == 'e' || input[1] == 'E') &&
+        (input[2] == 't' || input[2] == 'T')) {
+
+        input.remove_prefix(3);
+
+        input = trim(input);
+
+        if (input.empty()) {
+            return std::nullopt;
+        }
+
+        size_t eq_pos = input.find('=');
+        if (eq_pos == std::string_view::npos) {
+            return std::nullopt; // Нет знака =
+        }
+
+        std::string_view key = input.substr(0, eq_pos);
+        key = trim(key);
+
+        if (key.empty()) {
+            return std::nullopt;
+        }
+
+        std::string_view value = input.substr(eq_pos + 1);
+        value = trim(value);
+
+        return Command{Command::SET, std::string(key), std::string(value)};
+    }
+
+    return std::nullopt;
 }
 
-void TcpConnection::executeCommand(std::string_view commandString) {
-    const std::string_view command = commandString.substr(0, 4);
+void TcpConnection::executeGet(const std::string &key)
+{
+    const auto value = values_->get(key);
+    //TODO
+}
 
-    if (command == "$get") {
-        const std::string_view key = commandString.substr(6);
-        const auto value = values_->get(key);
-        //TODO
-    }
-    if (command == "$set") {
-        const size_t eq = commandString.find('=');
-        const std::string_view key = commandString.substr(6, eq-6);
-        const std::string_view value = commandString.substr(eq+1);
-        values_->set(key, value);
-        //TODO
-    }
+void TcpConnection::executeSet(const std::string &key, const std::string &value)
+{
+    values_->set(key, value);
+    //TODO
 }

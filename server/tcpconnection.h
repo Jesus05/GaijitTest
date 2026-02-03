@@ -24,9 +24,18 @@ public:
 private:
     TcpConnection(asio::io_context& io_context, Values::pointer values);
 
+    struct Command{
+        enum Type { GET, SET };
+        Type command;
+        std::string key;
+        std::string value;
+    };
+
     bool accumulateBuffer();
-    std::optional<std::string> parseCommand(std::string_view line);
-    void executeCommand(std::string_view commandString);
+    std::optional<Command> parseCommand(std::string_view line);
+
+    void executeGet(const std::string &key);
+    void executeSet(const std::string &key, const std::string &value);
 
     asio::ip::tcp::socket socket_;
     std::stringstream buffer_;
