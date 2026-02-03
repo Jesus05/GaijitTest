@@ -175,7 +175,7 @@ void TcpConnection::executeGet(const std::string &key) {
     const auto value = values_->get(key);
     std::string response;
     if (value) {
-        response = "OK " + key + "=" + *value + "\n";
+        response = key + "=" + *value + "\n";
     } else {
         response = "ERROR KEY_NOT_FOUND\n";
     }
