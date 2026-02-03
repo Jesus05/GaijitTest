@@ -2,6 +2,7 @@
 #define TCP_CONNECTION_H
 
 #include <memory>
+#include <sstream>
 
 #include <asio.hpp>
 
@@ -29,6 +30,9 @@ private:
                      size_t bytes_transferred);
 
     asio::ip::tcp::socket socket_;
+    std::stringstream buffer_;
+
+
     std::string message_;
     std::array<char, 128> readMessage_;
 };

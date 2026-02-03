@@ -11,6 +11,7 @@
 #include <array>
 #include <iostream>
 #include <asio.hpp>
+#include <thread>
 
 using asio::ip::tcp;
 
@@ -35,6 +36,19 @@ int main(int argc, char* argv[])
 
     int i = 0;
 
+    for (const auto sym : std::string("SomeMessageToServer\nOtherMsg\n"))
+    {
+        i++;
+        asio::error_code error;
+        std::array<char, 1> buf;
+        buf[0] = sym;
+        socket.write_some(asio::buffer(buf), error);
+        if (error) break;
+        if (i%2) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    i = 0;
+
     for (;;)
     {
       std::array<char, 128> buf;
@@ -43,11 +57,11 @@ int main(int argc, char* argv[])
       size_t len = 0;
 
       while (!len) {
-        len = socket.write_some(asio::buffer(std::string("SomeMessageToServer") + std::to_string(i++) + "/n"), error);
+        len = socket.write_some(asio::buffer(std::string("SomeMessageToServer") + std::to_string(i++) + "\n"), error);
           std::cout << "write len:" << len << " e:" << error << std::endl;
       }
 
-      // len = socket.write_some(asio::buffer(std::string("SomeMessageToServer/n")), error);
+      // len = socket.write_some(asio::buffer(std::string("SomeMessageToServer\n")), error);
 
       len = socket.read_some(asio::buffer(buf), error);
 
