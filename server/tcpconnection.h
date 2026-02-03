@@ -37,11 +37,13 @@ private:
 
     void executeGet(const std::string &key);
     void executeSet(const std::string &key, const std::string &value);
+    void sendResponse(const std::string &response);
 
     asio::ip::tcp::socket socket_;
     std::stringstream buffer_;
     Values::pointer values_;
     Stats::pointer stats_;
+
 };
 
 #endif // TCP_CONNECTION_H

@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 
     int i = 0;
 
-    for (const auto sym : std::string("SomeMessageToServer\nOtherMsg\n"))
+    for (const auto sym : std::string("SomeMessageToServer\n$set test=ghf hygd\n"))
     {
         i++;
         asio::error_code error;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
           std::cout << "write len:" << len << " e:" << error << std::endl;
       }
 
-      // len = socket.write_some(asio::buffer(std::string("SomeMessageToServer\n")), error);
+      len = socket.write_some(asio::buffer(std::string("$get test\n")), error);
 
       len = socket.read_some(asio::buffer(buf), error);
 

@@ -145,11 +145,45 @@ std::optional<TcpConnection::Command> TcpConnection::parseCommand(std::string_vi
 }
 
 void TcpConnection::executeGet(const std::string &key) {
+    if (stats_) {
+        stats_->recordRead(key);
+    }
     const auto value = values_->get(key);
-    //TODO
+    std::string response;
+    if (value) {
+        response = "OK " + key + "=" + *value + "\n";
+    } else {
+        response = "ERROR KEY_NOT_FOUND\n";
+    }
+    if (stats_) {
+        auto keyStats = stats_->getKeyStats(key);
+        response += "reads=" + std::to_string(keyStats.reads) + "\n";
+        response += "writes=" + std::to_string(keyStats.writes) + "\n";
+    }
+
+    sendResponse(response);
 }
 
 void TcpConnection::executeSet(const std::string &key, const std::string &value) {
+    if (stats_) {
+        stats_->recordWrite(key);
+    }
     values_->set(key, value);
-    //TODO
+    std::string response = "OK\n";
+    if (stats_) {
+        auto keyStats = stats_->getKeyStats(key);
+        response += "reads=" + std::to_string(keyStats.reads) + "\n";
+        response += "writes=" + std::to_string(keyStats.writes) + "\n";
+    }
+
+    sendResponse(response);
+}
+
+void TcpConnection::sendResponse(const std::string& response) {
+    asio::error_code error;
+    asio::write(socket_, asio::buffer(response), error);
+
+    if (error) {
+        std::cerr << "Write error: " << error.message() << std::endl;
+    }
 }
